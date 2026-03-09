@@ -397,7 +397,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
                       onChange={(e) => setData({ ...data, currency: e.target.value })}
                     >
                       <option value="USD">USD </option>
-                      <option value="BRL">BRL </option>
+                      <option value="BRL">R$ BRL </option>
                       <option value="EUR">EUR </option>
                       <option value="CUSTOM">Livre </option>
                     </select>
