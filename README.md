@@ -27,7 +27,7 @@ Sistema completo para criação, gestão e acompanhamento de orçamentos focado 
 2. **Configurar variáveis de ambiente**:
    Crie um arquivo `.env` na raiz com:
    ```env
-   VITE_SUPABASE_URL=seu_url_do_supabase
+   VITE_SUPABASE_URL=https://wvncdusvpfbdsnclynxl.supabase.co
    VITE_SUPABASE_ANON_KEY=sua_chave_anon_do_supabase
    ```
 
