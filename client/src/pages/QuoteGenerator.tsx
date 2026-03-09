@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Trash2, FileText, Download, Building2, Calendar, FileCheck, CircleDollarSign, Percent, Phone, Mail, Clock } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Building2, Calendar, FileCheck, CircleDollarSign, Percent, Phone, Mail, Clock, CreditCard } from "lucide-react";
 import logoP3 from "../assets/logo-p3.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
