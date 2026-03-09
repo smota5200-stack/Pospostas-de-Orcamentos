@@ -7,6 +7,11 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+  // =================== HEALTH ===================
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString(), node_env: process.env.NODE_ENV });
+  });
+
   // =================== CLIENTS ===================
   app.get("/api/clients", async (_req, res) => { res.json(await storage.getClients()); });
   app.get("/api/clients/:id", async (req, res) => {
