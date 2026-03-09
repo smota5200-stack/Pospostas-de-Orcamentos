@@ -97,6 +97,37 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     items: [],
   });
 
+  const [proRata, setProRata] = useState({
+    baseValue: 0,
+    totalDays: 30,
+    usedDays: 0,
+    description: "Serviço Pro-rata"
+  });
+
+  const addProRataItem = () => {
+    if (proRata.baseValue <= 0 || proRata.usedDays <= 0) {
+      toast({ title: "Atenção", description: "Preencha o valor e os dias utilizados.", variant: "destructive" });
+      return;
+    }
+    const valuePerDay = proRata.baseValue / (proRata.totalDays || 1);
+    const calculatedValue = valuePerDay * proRata.usedDays;
+
+    setData({
+      ...data,
+      items: [
+        ...data.items,
+        {
+          id: Math.random().toString(36).substring(7),
+          quantity: 1,
+          description: `${proRata.description} (${proRata.usedDays}/${proRata.totalDays} dias)`,
+          unitPrice: parseFloat(calculatedValue.toFixed(2)),
+          warranty: "Pro-rata",
+        },
+      ],
+    });
+    toast({ title: "Item Adicionado", description: "Cálculo pro-rata adicionado aos itens." });
+  };
+
   useEffect(() => {
     if (budgetToEdit && clients.length > 0) {
       const client = clients.find(c => c.name === budgetToEdit.clientName);
@@ -365,10 +396,10 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
                       value={data.currency}
                       onChange={(e) => setData({ ...data, currency: e.target.value })}
                     >
-                      <option value="USD">USD</option>
-                      <option value="BRL">BRL</option>
-                      <option value="EUR">EUR</option>
-                      <option value="CUSTOM">Livre</option>
+                      <option value="USD">USD </option>
+                      <option value="BRL">BRL </option>
+                      <option value="EUR">EUR </option>
+                      <option value="CUSTOM">Livre </option>
                     </select>
                   </div>
                   {data.currency === "CUSTOM" && (
@@ -412,21 +443,73 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg flex items-center gap-2"><CircleDollarSign className="w-5 h-5 text-primary" /> Itens</CardTitle>
-                <Button variant="outline" size="sm" onClick={addItem}><Plus className="w-4 h-4 mr-1" /> Add</Button>
+                <Button variant="outline" size="sm" onClick={addItem}><Plus className="w-4 h-4 mr-1" /> Add Item</Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {data.items.map((item) => (
-                  <div key={item.id} className="p-4 border rounded-lg bg-slate-50/50 space-y-3 relative">
-                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-destructive" onClick={() => removeItem(item.id)}><Trash2 className="w-4 h-4" /></Button>
-                    <div className="pr-8"><Label className="text-xs">Descrição</Label><Input value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} className="h-8" /></div>
-                    <div className="grid grid-cols-4 gap-2">
-                      <div><Label className="text-xs">Qtd</Label><Input type="number" value={item.quantity} onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)} className="h-8" /></div>
-                      <div><Label className="text-xs">Preço Unit.</Label><Input type="number" value={item.unitPrice} onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="h-8" /></div>
-                      <div><Label className="text-xs">Total</Label><Input value={formatCurrency(item.quantity * item.unitPrice)} readOnly className="h-8 bg-slate-100 font-semibold" /></div>
-                      <div><Label className="text-xs">Garantia</Label><Input value={item.warranty} onChange={(e) => updateItem(item.id, 'warranty', e.target.value)} className="h-8" /></div>
+                <Tabs defaultValue="list">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="list" className="flex gap-2"><FileText className="w-4 h-4" /> Lista de Itens</TabsTrigger>
+                    <TabsTrigger value="prorata" className="flex gap-2"><Clock className="w-4 h-4" /> Pro rata</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="list" className="space-y-4">
+                    {data.items.map((item) => (
+                      <div key={item.id} className="p-4 border rounded-lg bg-slate-50/50 space-y-3 relative">
+                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-destructive" onClick={() => removeItem(item.id)}><Trash2 className="w-4 h-4" /></Button>
+                        <div className="pr-8"><Label className="text-xs">Descrição</Label><Input value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} className="h-8" /></div>
+                        <div className="grid grid-cols-4 gap-2">
+                          <div><Label className="text-xs">Qtd</Label><Input type="number" value={item.quantity} onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)} className="h-8" /></div>
+                          <div><Label className="text-xs">Preço Unit.</Label><Input type="number" value={item.unitPrice} onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="h-8" /></div>
+                          <div><Label className="text-xs">Total</Label><Input value={formatCurrency(item.quantity * item.unitPrice)} readOnly className="h-8 bg-slate-100 font-semibold" /></div>
+                          <div><Label className="text-xs">Garantia</Label><Input value={item.warranty} onChange={(e) => updateItem(item.id, 'warranty', e.target.value)} className="h-8" /></div>
+                        </div>
+                      </div>
+                    ))}
+                    {data.items.length === 0 && (
+                      <div className="text-center py-6 border-2 border-dashed rounded-lg text-muted-foreground italic">
+                        Nenhum item adicionado à lista.
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="prorata" className="space-y-4 border p-4 rounded-lg bg-blue-50/30">
+                    <div className="flex items-center gap-2 text-primary font-semibold mb-2">
+                      <Clock className="w-4 h-4" /> Calculadora de Pro-rata
                     </div>
-                  </div>
-                ))}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Descrição do Item</Label>
+                        <Input value={proRata.description} onChange={(e) => setProRata({ ...proRata, description: e.target.value })} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Valor Base (Mensal)</Label>
+                          <Input type="number" value={proRata.baseValue} onChange={(e) => setProRata({ ...proRata, baseValue: parseFloat(e.target.value) || 0 })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Dias Totais do Período</Label>
+                          <Input type="number" value={proRata.totalDays} onChange={(e) => setProRata({ ...proRata, totalDays: parseInt(e.target.value) || 30 })} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Dias Utilizados (Tempo na mão)</Label>
+                        <Input type="number" placeholder="Ex: 12" value={proRata.usedDays} onChange={(e) => setProRata({ ...proRata, usedDays: parseInt(e.target.value) || 0 })} />
+                      </div>
+
+                      <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-bold tracking-tight">Valor Calculado</p>
+                          <p className="text-xl font-bold text-primary">
+                            {formatCurrency((proRata.baseValue / (proRata.totalDays || 1)) * proRata.usedDays)}
+                          </p>
+                        </div>
+                        <Button onClick={addProRataItem} className="bg-primary text-white">
+                          <Plus className="w-4 h-4 mr-2" /> Adicionar ao Orçamento
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
