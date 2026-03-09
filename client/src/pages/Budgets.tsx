@@ -27,11 +27,9 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 };
 
 function formatCurrency(value: number, currency = "BRL") {
-    try {
-        return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(value);
-    } catch {
-        return `${currency} ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-    }
+    if (!currency) currency = "BRL";
+    if (currency === "CUSTOM") currency = "USD";
+    return `${currency} ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function daysUntilExpiry(deletedAt: Date | null | undefined): number {

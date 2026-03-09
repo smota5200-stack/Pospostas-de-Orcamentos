@@ -274,7 +274,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     }
     const budgetPayload = {
       clientName: data.contactName,
-      title: budgetToEdit?.title || "Orçamento " + new Date().toLocaleDateString('pt-BR'),
+      title: budgetToEdit?.title || `Orçamento ${new Date().toLocaleDateString('pt-BR')}${data.company ? ` - ${data.company}` : ''}`,
       status: budgetToEdit?.status || "rascunho",
       totalValue: Math.round(calculateTotal * 100),
       currency: data.currency === "CUSTOM" ? data.customCurrency || "USD" : data.currency,
@@ -287,15 +287,8 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
   };
 
   const formatCurrency = (value: number) => {
-    const currencyToUse = data.currency === "CUSTOM" ? data.customCurrency || "USD" : data.currency;
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currencyToUse.length === 3 ? currencyToUse : 'USD',
-      }).format(value);
-    } catch (e) {
-      return `${currencyToUse} ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-    }
+    const currencyToUse = data.currency === "CUSTOM" ? (data.customCurrency || "USD") : data.currency;
+    return `${currencyToUse} ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
