@@ -211,7 +211,7 @@ export default function Budgets() {
                                                 onClick={() => setLocation(`/orcamento/${b.id}`)}
                                             >
                                                 <TableCell className="font-medium">
-                                                    {b.title}
+                                                    {b.title}{b.clientName && !b.title.includes(b.clientName) ? ` - ${b.clientName}` : ""}
                                                     <div className="text-xs text-muted-foreground font-normal mt-1">
                                                         {new Date(b.createdAt || new Date()).getFullYear()}-PROP-{b.proposalId ? String(b.proposalId).padStart(5, '0') : b.id.substring(0, 5).toUpperCase()}
                                                     </div>
@@ -323,7 +323,7 @@ export default function Budgets() {
                                         return (
                                             <TableRow key={b.id}>
                                                 <TableCell className="font-medium">
-                                                    {b.title}
+                                                    {b.title}{b.clientName && !b.title.includes(b.clientName) ? ` - ${b.clientName}` : ""}
                                                     <div className="text-xs text-muted-foreground font-normal mt-1">
                                                         {new Date(b.createdAt || new Date()).getFullYear()}-PROP-{b.proposalId ? String(b.proposalId).padStart(5, '0') : b.id.substring(0, 5).toUpperCase()}
                                                     </div>

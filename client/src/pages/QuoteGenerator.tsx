@@ -274,7 +274,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     }
     const budgetPayload = {
       clientName: data.contactName,
-      title: budgetToEdit?.title || `Orçamento ${new Date().toLocaleDateString('pt-BR')}${data.company ? ` - ${data.company}` : ''}`,
+      title: budgetToEdit?.title || `Orçamento ${new Date().toLocaleDateString('pt-BR')}${data.contactName ? ` - ${data.contactName}` : ''}${data.company ? ` (${data.company})` : ''}`,
       status: budgetToEdit?.status || "rascunho",
       totalValue: Math.round(calculateTotal * 100),
       currency: data.currency === "CUSTOM" ? data.customCurrency || "USD" : data.currency,
