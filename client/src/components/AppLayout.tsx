@@ -42,7 +42,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link href="/" className="flex items-center gap-2 text-primary">
                         <Building2 className="w-6 h-6 shrink-0" />
                         <span className="font-heading font-semibold text-lg tracking-tight group-data-[collapsible=icon]:hidden">
-                            Proposify
+                            Propostas
                         </span>
                     </Link>
                 </SidebarHeader>
@@ -89,7 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                 <SidebarFooter className="group-data-[collapsible=icon]:hidden">
                     <div className="px-2 py-3 text-xs text-muted-foreground">
-                        © 2025 Proposify
+                        © 2025 Propostas
                     </div>
                 </SidebarFooter>
             </Sidebar>

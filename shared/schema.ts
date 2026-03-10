@@ -65,6 +65,7 @@ export const budgets = pgTable("budgets", {
   paymentTerms: text("payment_terms"),
   notes: text("notes"),
   items: jsonb("items").$type<BudgetItem[]>().default([]),
+  referenceImages: jsonb("reference_images").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"), // null = ativo, preenchido = na lixeira
 });

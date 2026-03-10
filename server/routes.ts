@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { google } from "googleapis";
+import { Readable } from "stream";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -152,6 +154,66 @@ export async function registerRoutes(
   });
   app.delete("/api/texts/:id", async (req, res) => {
     (await storage.deleteText(req.params.id)) ? res.json({ success: true }) : res.status(404).json({ message: "Not found" });
+  });
+
+  // =================== GOOGLE DRIVE ===================
+  app.post("/api/drive/upload", async (req, res) => {
+    try {
+      const { filename, base64Data, mimeType } = req.body;
+
+      const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+      const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+
+      if (!clientEmail || !privateKey) {
+        return res.status(400).json({
+          message: "Credenciais do Google Drive (Service Account) não configuradas no sistema."
+        });
+      }
+
+      if (!base64Data) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado para upload." });
+      }
+
+      const auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: clientEmail,
+          private_key: privateKey.replace(/\\n/g, '\n'),
+        },
+        scopes: ['https://www.googleapis.com/auth/drive'],
+      });
+
+      const drive = google.drive({ version: 'v3', auth });
+
+      const buffer = Buffer.from(base64Data.split(',')[1] || base64Data, 'base64');
+      const stream = new Readable();
+      stream.push(buffer);
+      stream.push(null);
+
+      const fileMetadata: any = {
+        name: filename || `Orcamento_${Date.now()}.pdf`,
+      };
+
+      const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+      if (folderId) {
+        fileMetadata.parents = [folderId];
+      }
+
+      const media = {
+        mimeType: mimeType || 'application/pdf',
+        body: stream,
+      };
+
+      const file = await drive.files.create({
+        requestBody: fileMetadata,
+        media: media,
+        fields: 'id, webViewLink',
+      });
+
+      res.json({ success: true, fileId: file.data.id, webViewLink: file.data.webViewLink });
+    } catch (e: any) {
+      console.error("Error uploading to Google Drive:", e);
+      res.status(500).json({ message: e.message || "Failed to upload to Google Drive" });
+    }
   });
 
   return httpServer;

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Trash2, FileText, Download, Building2, Calendar, FileCheck, CircleDollarSign, Percent, Phone, Mail, Clock, CreditCard } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Building2, Calendar, FileCheck, CircleDollarSign, Percent, Phone, Mail, Clock, CreditCard, Image as ImageIcon, Upload, CloudUpload } from "lucide-react";
 import logoP3 from "../assets/logo-p3.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,7 @@ type QuoteData = {
   notes: string;
   commissionRate: number;
   items: LineItem[];
+  referenceImages: string[];
 };
 
 function formatPhone(phone: string) {
@@ -95,6 +96,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     notes: "",
     commissionRate: 0,
     items: [],
+    referenceImages: [],
   });
 
   const [proRata, setProRata] = useState({
@@ -163,6 +165,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
         notes: budgetToEdit.notes || "",
         commissionRate: 0,
         items: budgetToEdit.items || [],
+        referenceImages: budgetToEdit.referenceImages || [],
       });
     }
   }, [budgetToEdit, clients]);
@@ -227,6 +230,52 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     }
   };
 
+  const [isUploadingDrive, setIsUploadingDrive] = useState(false);
+
+  const saveToGoogleDrive = async () => {
+    toast({ title: "Gerando PDF...", description: "Preparando o arquivo para o Google Drive." });
+    const element = document.getElementById('prop-document');
+    if (!element) return;
+    const filename = `Orcamento_${data.contactName.replace(/[^a-z0-9]/gi, '_') || 'Avulso'}.pdf`;
+    const opt = {
+      margin: 10,
+      filename: filename,
+      image: { type: 'jpeg' as 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as 'portrait' }
+    };
+    try {
+      setIsUploadingDrive(true);
+      const pdfBase64 = await html2pdf().from(element).set(opt).outputPdf('datauristring');
+
+      toast({ title: "Enviando...", description: "Fazendo upload para o Google Drive." });
+      const res = await fetch("/api/drive/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, base64Data: pdfBase64 })
+      });
+
+      const responseData = await res.json();
+
+      if (!res.ok) {
+        throw new Error(responseData.message || "Erro desconhecido ao enviar");
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: "PDF salvo no Google Drive com sucesso.",
+        action: responseData.webViewLink ? (
+          <a href={responseData.webViewLink} target="_blank" rel="noreferrer" className="text-blue-500 underline ml-2 font-bold">Abrir</a>
+        ) : undefined
+      });
+    } catch (err: any) {
+      console.error("Drive upload error:", err);
+      toast({ title: "Erro na Integração", description: err.message || "Falha ao salvar no Google Drive", variant: "destructive" });
+    } finally {
+      setIsUploadingDrive(false);
+    }
+  };
+
   const createBudgetMutation = useMutation({
     mutationFn: async (budgetData: any) => {
       const url = isEditing ? `/api/budgets/${params?.id}` : "/api/budgets";
@@ -282,6 +331,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
       paymentTerms: data.paymentTerms,
       notes: data.notes,
       items: data.items,
+      referenceImages: data.referenceImages,
     };
     createBudgetMutation.mutate(budgetPayload);
   };
@@ -294,19 +344,22 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'rgb(221, 221, 221)' }}>
       <header className="border-b sticky top-0 z-10" style={{ backgroundColor: 'rgb(8, 21, 52)' }}>
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2" style={{ color: 'white' }}>
+        <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start" style={{ color: 'white' }}>
             <Building2 className="w-6 h-6" />
-            <span className="font-heading font-semibold text-lg tracking-tight">Proposify</span>
+            <span className="font-heading font-semibold text-lg tracking-tight">Propostas</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={generatePDF} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80">
-              <Download className="w-4 h-4 mr-2" /> Exportar PDF
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={generatePDF} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none">
+              <Download className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Exportar PDF</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80">
+            <Button variant="outline" size="sm" onClick={saveToGoogleDrive} disabled={isUploadingDrive} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none">
+              <CloudUpload className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">{isUploadingDrive ? "Salvando..." : "Salvar no Drive"}</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.print()} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none hidden sm:flex">
               <FileText className="w-4 h-4 mr-2" /> Imprimir
             </Button>
-            <Button size="sm" onClick={handleGenerate} disabled={createBudgetMutation.isPending} style={{ backgroundColor: 'white', color: 'rgb(8, 21, 52)' }} className="font-semibold hover:opacity-80">
+            <Button size="sm" onClick={handleGenerate} disabled={createBudgetMutation.isPending} style={{ backgroundColor: 'white', color: 'rgb(8, 21, 52)' }} className="font-semibold hover:opacity-80 w-full sm:w-auto mt-2 sm:mt-0">
               <Download className="w-4 h-4 mr-2" /> {createBudgetMutation.isPending ? "Salvando..." : "Salvar Orçamento"}
             </Button>
           </div>
@@ -389,10 +442,10 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
                       value={data.currency}
                       onChange={(e) => setData({ ...data, currency: e.target.value })}
                     >
-                      <option value="USD">USD </option>
-                      <option value="BRL">R$ BRL </option>
-                      <option value="EUR">EUR </option>
-                      <option value="CUSTOM">Livre </option>
+                      <option value="USD">USD</option>
+                      <option value="BRL">BRL</option>
+                      <option value="EUR">EUR</option>
+                      <option value="CUSTOM">Livre</option>
                     </select>
                   </div>
                   {data.currency === "CUSTOM" && (
@@ -440,9 +493,10 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
               </CardHeader>
               <CardContent className="space-y-4">
                 <Tabs defaultValue="list">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="list" className="flex gap-2"><FileText className="w-4 h-4" /> Lista de Itens</TabsTrigger>
                     <TabsTrigger value="prorata" className="flex gap-2"><Clock className="w-4 h-4" /> Pro rata</TabsTrigger>
+                    <TabsTrigger value="images" className="flex gap-2"><ImageIcon className="w-4 h-4" /> Imagens Ref.</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="list" className="space-y-4">
@@ -500,6 +554,108 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
                           <Plus className="w-4 h-4 mr-2" /> Adicionar ao Orçamento
                         </Button>
                       </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="images" className="space-y-4 border p-4 rounded-lg bg-slate-50">
+                    <div className="flex items-center gap-2 text-primary font-semibold mb-2">
+                      <ImageIcon className="w-4 h-4" /> Imagens de Referência do Cliente
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Cole a URL de uma imagem aqui..."
+                          id="image-url-input"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const input = e.currentTarget;
+                              if (input.value) {
+                                setData({
+                                  ...data,
+                                  referenceImages: [...data.referenceImages, input.value]
+                                });
+                                input.value = '';
+                              }
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            const input = document.getElementById('image-url-input') as HTMLInputElement;
+                            if (input && input.value) {
+                              setData({
+                                ...data,
+                                referenceImages: [...data.referenceImages, input.value]
+                              });
+                              input.value = '';
+                            }
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-2" /> Adicionar
+                        </Button>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground mb-4">
+                        Ou clique no botão abaixo para selecionar arquivos do seu computador.
+                      </div>
+
+                      <div className="flex items-center justify-center w-full">
+                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 border-slate-300">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-3 text-slate-400" />
+                            <p className="mb-2 text-sm text-slate-500 font-semibold">Clique para fazer upload de imagens</p>
+                            <p className="text-xs text-slate-500">PNG, JPG, JPEG (Max. 5MB recomendável)</p>
+                          </div>
+                          <input
+                            id="dropzone-file"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            multiple
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                Object.values(e.target.files).forEach(file => {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    if (event.target?.result && typeof event.target.result === 'string') {
+                                      setData(prev => ({
+                                        ...prev,
+                                        referenceImages: [...prev.referenceImages, event.target!.result as string]
+                                      }));
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                              }
+                              e.target.value = ''; // Reset input
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {data.referenceImages.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                          {data.referenceImages.map((img, idx) => (
+                            <div key={idx} className="relative group rounded-md overflow-hidden border">
+                              <img src={img} alt={`Referência ${idx + 1}`} className="w-full h-32 object-cover" />
+                              <button
+                                onClick={() => {
+                                  setData({
+                                    ...data,
+                                    referenceImages: data.referenceImages.filter((_, i) => i !== idx)
+                                  });
+                                }}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -619,6 +775,19 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
                     <div className="mt-6 p-6 bg-slate-50 rounded-xl border border-slate-100">
                       <h4 className="font-bold text-slate-900 mb-2">Observações Adicionais</h4>
                       <p className="text-slate-600 whitespace-pre-wrap">{data.notes}</p>
+                    </div>
+                  )}
+
+                  {data.referenceImages.length > 0 && (
+                    <div className="mt-8">
+                      <h4 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Imagens de Referência</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-12">
+                        {data.referenceImages.map((img, idx) => (
+                          <div key={idx} className="rounded-lg overflow-hidden border border-slate-200">
+                            <img src={img} alt={`Ref ${idx}`} className="w-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 

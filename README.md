@@ -1,4 +1,4 @@
-# Proposify - Sistema de Gestão de Orçamentos 🚀
+# Propostas - Sistema de Gestão de Orçamentos 🚀
 
 Sistema completo para criação, gestão e acompanhamento de orçamentos focado em agilidade e design premium.
 
