@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Trash2, FileText, Download, Building2, Calendar, FileCheck, CircleDollarSign, Percent, Phone, Mail, Clock } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Building2, Calendar, FileCheck, CircleDollarSign, Percent, Phone, Mail, Clock, HardDrive } from "lucide-react";
 import logoImg from "../assets/logo.png";
 import logoMicrosoft from "../assets/logo-microsoft.png";
 import logoP3 from "../assets/logo-p3.png";
@@ -17,6 +17,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { Client } from "@shared/schema";
 import { useLocation } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
 
@@ -99,6 +107,11 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     commissionRate: 0,
     items: [],
   });
+
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [saveMethod, setSaveMethod] = useState<"local" | "drive" | null>(null);
+  const [driveCredentials, setDriveCredentials] = useState({ login: "", password: "" });
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (budgetToEdit && clients.length > 0) {
@@ -210,7 +223,68 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
       toast({ title: "Sucesso!", description: `PDF baixado: ${filename}` });
     } catch (err) {
       console.error("PDF error:", err);
-      toast({ title: "Erro na geração", description: "Ocorreu um erro ao gerar o PDF.", variant: "destructive" });
+    }
+  };
+
+  const finalizeSave = async (method: "local" | "drive") => {
+    const element = document.getElementById('prop-document');
+    if (!element) return;
+
+    const filename = `Orcamento_${data.contactName.replace(/[^a-z0-9]/gi, '_') || 'Avulso'}.pdf`;
+    const opt = {
+      margin: 10,
+      filename: filename,
+      image: { type: 'jpeg' as 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as 'portrait' }
+    };
+
+    if (method === "local") {
+      try {
+        await html2pdf().from(element).set(opt).save();
+        toast({ title: "Sucesso!", description: `PDF baixado localmente.` });
+      } catch (err) {
+        toast({ title: "Erro", description: "Falha ao gerar PDF local.", variant: "destructive" });
+      }
+      setIsSaveDialogOpen(false);
+    } else {
+      setIsUploading(true);
+      try {
+        const pdfWorker = html2pdf().from(element).set(opt);
+        const pdfBlob = await pdfWorker.output('blob');
+
+        const formData = new FormData();
+        formData.append('file', pdfBlob, filename);
+        formData.append('filename', filename);
+        formData.append('login', driveCredentials.login);
+        formData.append('password', driveCredentials.password);
+
+        const response = await fetch('/api/drive/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.message || 'Erro no upload');
+        }
+
+        const result = await response.json();
+        toast({ 
+          title: "Salvo no Google Drive!", 
+          description: result.name,
+          action: (
+            <Button variant="outline" size="sm" onClick={() => window.open(result.webViewLink, '_blank')}>
+              Ver no Drive
+            </Button>
+          )
+        });
+        setIsSaveDialogOpen(false);
+      } catch (err: any) {
+        toast({ title: "Erro no Drive", description: err.message, variant: "destructive" });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -295,14 +369,14 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
             <span className="font-heading font-semibold text-lg tracking-tight">Proposify</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={generatePDF}>
-              <Download className="w-4 h-4 mr-2" /> Exportar PDF
+            <Button variant="outline" size="sm" onClick={() => setIsSaveDialogOpen(true)} data-testid="button-save-choice">
+              <Download className="w-4 h-4 mr-2" /> Salvar / Exportar
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.print()} data-testid="button-print">
               <FileText className="w-4 h-4 mr-2" /> Imprimir
             </Button>
             <Button size="sm" onClick={handleGenerate} data-testid="button-generate" disabled={createBudgetMutation.isPending}>
-              <Download className="w-4 h-4 mr-2" /> {createBudgetMutation.isPending ? "Salvando..." : "Salvar Orçamento"}
+              <Download className="w-4 h-4 mr-2" /> {createBudgetMutation.isPending ? "Salvando Registro..." : "Registrar no Banco"}
             </Button>
           </div>
         </div>
@@ -575,6 +649,81 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
           </div>
         </div>
       </main>
+
+      <Dialog open={isSaveDialogOpen} onOpenChange={(open) => {
+        setIsSaveDialogOpen(open);
+        if (!open) setSaveMethod(null);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Escolha como deseja salvar</DialogTitle>
+            <DialogDescription>
+              Selecione o destino para o arquivo PDF da proposta.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!saveMethod ? (
+            <div className="grid grid-cols-2 gap-4 py-4">
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                onClick={() => finalizeSave("local")}
+                data-testid="save-local-btn"
+              >
+                <Download className="w-8 h-8 text-primary" />
+                <span>Baixar Local</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                onClick={() => setSaveMethod("drive")}
+                data-testid="save-drive-btn"
+              >
+                <HardDrive className="w-8 h-8 text-primary" />
+                <span>Google Drive</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="drive-login">Login do Drive (Mock)</Label>
+                <Input
+                  id="drive-login"
+                  placeholder="seu-email@gmail.com"
+                  value={driveCredentials.login}
+                  onChange={(e) => setDriveCredentials({ ...driveCredentials, login: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="drive-pass">Senha (Mock)</Label>
+                <Input
+                  id="drive-pass"
+                  type="password"
+                  placeholder="••••••••"
+                  value={driveCredentials.password}
+                  onChange={(e) => setDriveCredentials({ ...driveCredentials, password: e.target.value })}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => finalizeSave("drive")}
+                disabled={isUploading || !driveCredentials.login || !driveCredentials.password}
+              >
+                {isUploading ? "Enviando..." : "Confirmar e Salvar"}
+              </Button>
+              <Button variant="ghost" className="w-full text-xs" onClick={() => setSaveMethod(null)}>
+                Voltar
+              </Button>
+            </div>
+          )}
+
+          <DialogFooter className="sm:justify-start">
+            <Button type="button" variant="secondary" onClick={() => setIsSaveDialogOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

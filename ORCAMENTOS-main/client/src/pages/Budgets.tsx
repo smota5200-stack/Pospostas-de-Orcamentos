@@ -156,8 +156,7 @@ export default function Budgets() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Título</TableHead>
-                                <TableHead>Cliente</TableHead>
+                                <TableHead>Título e Cliente</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Vencimento</TableHead>
                                 <TableHead className="text-right">Valor</TableHead>
@@ -174,12 +173,14 @@ export default function Budgets() {
                                         onClick={() => setLocation(`/orcamento/${b.id}`)}
                                     >
                                         <TableCell className="font-medium">
-                                            {b.title}
-                                            <div className="text-xs text-muted-foreground font-normal mt-1">
-                                                {new Date(b.createdAt || new Date()).getFullYear()}-PROP-{b.proposalId ? String(b.proposalId).padStart(5, '0') : b.id.substring(0, 5).toUpperCase()}
+                                            <div className="flex flex-col">
+                                                <span>{b.title}</span>
+                                                <span className="text-sm text-primary font-semibold">{b.clientName}</span>
+                                                <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                                                    {new Date(b.createdAt || new Date()).getFullYear()}-PROP-{b.proposalId ? String(b.proposalId).padStart(5, '0') : b.id.substring(0, 5).toUpperCase()}
+                                                </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground">{b.clientName}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={`gap-1 ${sc.color}`}>
                                                 {sc.icon} {sc.label}
