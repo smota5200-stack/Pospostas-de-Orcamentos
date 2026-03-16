@@ -675,7 +675,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
 
           <div className="lg:col-span-12 xl:col-span-7 lg:sticky lg:top-24">
             <Card className="shadow-xl overflow-hidden">
-              <div id="prop-document" className="bg-white">
+              <div id="prop-document" className="bg-white" style={{ colorScheme: 'light' }}>
                 <div className="text-white p-6" style={{ backgroundColor: '#0f172a' }}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
