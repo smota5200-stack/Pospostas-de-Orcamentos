@@ -115,6 +115,12 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
   });
 
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [googleDriveKey, setGoogleDriveKey] = useState("");
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem("google_drive_api_key");
+    if (savedKey) setGoogleDriveKey(savedKey);
+  }, []);
 
   const addProRataItem = () => {
     if (proRata.baseValue <= 0 || proRata.usedDays <= 0) {
@@ -264,7 +270,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
       const res = await fetch("/api/drive/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename, base64Data: pdfBase64 })
+        body: JSON.stringify({ filename, base64Data: pdfBase64, apiKey: googleDriveKey })
       });
 
       const responseData = await res.json();
@@ -828,10 +834,24 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
             <Download className="mr-3 h-5 w-5" />
             Baixar Localmente (PDF)
           </Button>
+          <div className="space-y-2 px-1">
+            <Label htmlFor="drive-key" className="text-xs font-bold uppercase text-muted-foreground">Chave API / Credencial Google</Label>
+            <Input 
+              id="drive-key"
+              type="password" 
+              placeholder="Insira sua chave para liberar o Drive" 
+              value={googleDriveKey}
+              onChange={(e) => {
+                setGoogleDriveKey(e.target.value);
+                localStorage.setItem("google_drive_api_key", e.target.value);
+              }}
+              className="h-9"
+            />
+          </div>
           <Button 
             className="w-full justify-start h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white" 
             onClick={saveToGoogleDrive}
-            disabled={isUploadingDrive}
+            disabled={isUploadingDrive || !googleDriveKey}
           >
             <CloudUpload className="mr-3 h-5 w-5" />
             {isUploadingDrive ? "Salvando no Drive..." : "Salvar no Google Drive"}

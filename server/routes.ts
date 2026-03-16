@@ -159,14 +159,14 @@ export async function registerRoutes(
   // =================== GOOGLE DRIVE ===================
   app.post("/api/drive/upload", async (req, res) => {
     try {
-      const { filename, base64Data, mimeType } = req.body;
-
+      const { filename, base64Data, mimeType, apiKey } = req.body;
+      
       const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-      const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+      const privateKey = apiKey || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
 
       if (!clientEmail || !privateKey) {
-        return res.status(400).json({
-          message: "Credenciais do Google Drive (Service Account) não configuradas no sistema."
+        return res.status(400).json({ 
+          message: apiKey ? "Email da conta de serviço não configurado no servidor." : "Credenciais do Google Drive (Chave API ou Service Account) não fornecidas."
         });
       }
 
