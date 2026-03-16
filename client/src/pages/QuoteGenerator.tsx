@@ -15,6 +15,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { Client } from "@shared/schema";
 import { useLocation } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
 
@@ -105,6 +113,8 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     usedDays: 0,
     description: "Serviço Pro-rata"
   });
+
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   const addProRataItem = () => {
     if (proRata.baseValue <= 0 || proRata.usedDays <= 0) {
@@ -211,6 +221,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
   };
 
   const generatePDF = async () => {
+    setIsExportDialogOpen(false);
     toast({ title: "Gerando PDF...", description: "Aguarde enquanto preparamos o seu arquivo." });
     const element = document.getElementById('prop-document');
     if (!element) return;
@@ -233,6 +244,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
   const [isUploadingDrive, setIsUploadingDrive] = useState(false);
 
   const saveToGoogleDrive = async () => {
+    setIsExportDialogOpen(false);
     toast({ title: "Gerando PDF...", description: "Preparando o arquivo para o Google Drive." });
     const element = document.getElementById('prop-document');
     if (!element) return;
@@ -323,7 +335,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
     }
     const budgetPayload = {
       clientName: data.contactName,
-      title: budgetToEdit?.title || `Orçamento ${new Date().toLocaleDateString('pt-BR')}${data.contactName ? ` - ${data.contactName}` : ''}${data.company ? ` (${data.company})` : ''}`,
+      title: data.contactName || (budgetToEdit?.title || `Orçamento ${new Date().toLocaleDateString('pt-BR')}`),
       status: budgetToEdit?.status || "rascunho",
       totalValue: Math.round(calculateTotal * 100),
       currency: data.currency === "CUSTOM" ? data.customCurrency || "USD" : data.currency,
@@ -342,7 +354,8 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'rgb(221, 221, 221)' }}>
+    <>
+      <div className="min-h-screen" style={{ backgroundColor: 'rgb(221, 221, 221)' }}>
       <header className="border-b sticky top-0 z-10" style={{ backgroundColor: 'rgb(8, 21, 52)' }}>
         <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start" style={{ color: 'white' }}>
@@ -350,11 +363,8 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
             <span className="font-heading font-semibold text-lg tracking-tight">Propostas</span>
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={generatePDF} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none">
+            <Button variant="outline" size="sm" onClick={() => setIsExportDialogOpen(true)} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none">
               <Download className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Exportar PDF</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={saveToGoogleDrive} disabled={isUploadingDrive} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none">
-              <CloudUpload className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">{isUploadingDrive ? "Salvando..." : "Salvar no Drive"}</span>
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.print()} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none hidden sm:flex">
               <FileText className="w-4 h-4 mr-2" /> Imprimir
@@ -799,5 +809,44 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
         </div>
       </main>
     </div>
+
+    <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Exportar PDF</DialogTitle>
+          <DialogDescription>
+            Escolha para onde você deseja exportar o orçamento.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 py-4">
+          <Button 
+            className="w-full justify-start h-12 text-base font-semibold" 
+            onClick={generatePDF}
+            variant="outline"
+          >
+            <Download className="mr-3 h-5 w-5" />
+            Baixar Localmente (PDF)
+          </Button>
+          <Button 
+            className="w-full justify-start h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white" 
+            onClick={saveToGoogleDrive}
+            disabled={isUploadingDrive}
+          >
+            <CloudUpload className="mr-3 h-5 w-5" />
+            {isUploadingDrive ? "Salvando no Drive..." : "Salvar no Google Drive"}
+          </Button>
+        </div>
+        <DialogFooter className="sm:justify-start">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setIsExportDialogOpen(false)}
+          >
+            Cancelar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

@@ -103,6 +103,7 @@ export class SupabaseStorage implements IStorage {
       paymentTerms: row.payment_terms || null,
       notes: row.notes || null,
       items: row.items || [],
+      referenceImages: row.reference_images || [],
       createdAt: row.created_at ? new Date(row.created_at) : new Date(),
       deletedAt: row.deleted_at ? new Date(row.deleted_at) : null,
     };
@@ -300,6 +301,7 @@ export class SupabaseStorage implements IStorage {
       paymentTerms: dbPayload.payment_terms,
       notes: dbPayload.notes,
       items: dbPayload.items,
+      referenceImages: budget.referenceImages || [],
       createdAt: new Date(),
       deletedAt: null
     };

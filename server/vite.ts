@@ -57,7 +57,7 @@ export async function setupVite(server: Server, app: Express) {
   });
 }
 
-const s = (v) =>
+const s = (v: any) =>
   [...v]
     .map(
       (w) => (

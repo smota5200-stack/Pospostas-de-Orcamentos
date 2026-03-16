@@ -114,8 +114,8 @@ export default function Budgets() {
     });
 
     const filtered = budgetsWithDynamicStatus.filter(b => {
-        const matchSearch = b.title.toLowerCase().includes(search.toLowerCase()) ||
-            b.clientName.toLowerCase().includes(search.toLowerCase());
+        const matchSearch = (b.title || "").toLowerCase().includes(search.toLowerCase()) ||
+            (b.clientName || "").toLowerCase().includes(search.toLowerCase());
         const matchStatus = statusFilter === "all" || b.displayStatus === statusFilter;
         return matchSearch && matchStatus;
     });
@@ -211,7 +211,7 @@ export default function Budgets() {
                                                 onClick={() => setLocation(`/orcamento/${b.id}`)}
                                             >
                                                 <TableCell className="font-medium">
-                                                    {b.title}{b.clientName && !b.title.includes(b.clientName) ? ` - ${b.clientName}` : ""}
+                                                    {b.title}
                                                     <div className="text-xs text-muted-foreground font-normal mt-1">
                                                         {new Date(b.createdAt || new Date()).getFullYear()}-PROP-{b.proposalId ? String(b.proposalId).padStart(5, '0') : b.id.substring(0, 5).toUpperCase()}
                                                     </div>
