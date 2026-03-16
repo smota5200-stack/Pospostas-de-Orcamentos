@@ -683,8 +683,8 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
                         <img src={logoP3} alt="P3 Logo" className="w-full h-full object-contain" />
                       </div>
                       <div>
-                        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">
-                          PROPOSTA <br className="hidden sm:block" /> COMERCIAL
+                        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none uppercase">
+                          {data.contactName || "PROPOSTA COMERCIAL"}
                         </h2>
                         <p className="text-white/60 text-xs font-mono mt-1">Ref: {budgetToEdit?.proposalId ? String(budgetToEdit.proposalId).padStart(5, '0') : (new Date().getFullYear() + '-PROP-' + proposalNumber)}</p>
                       </div>
