@@ -1,11 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { uploadToDrive, listDriveFiles } from "./google-drive";
-import multer from "multer";
-
-const upload = multer();
-
 
 export async function registerRoutes(
   httpServer: Server,
@@ -140,29 +135,5 @@ export async function registerRoutes(
     (await storage.deleteText(req.params.id)) ? res.json({ success: true }) : res.status(404).json({ message: "Not found" });
   });
 
-  // =================== GOOGLE DRIVE ===================
-  app.get("/api/drive/files", async (_req, res) => {
-    try {
-      const files = await listDriveFiles();
-      res.json(files);
-    } catch (e: any) {
-      res.status(500).json({ message: e.message });
-    }
-  });
-
-  app.post("/api/drive/upload", upload.single("file"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-      const { filename } = req.body;
-      const result = await uploadToDrive(filename || req.file.originalname, req.file.buffer, req.file.mimetype);
-      res.status(201).json(result);
-    } catch (e: any) {
-      res.status(500).json({ message: e.message });
-    }
-  });
-
   return httpServer;
-
 }
