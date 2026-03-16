@@ -361,6 +361,7 @@ export default function QuoteGenerator({ params }: { params?: { id?: string } })
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start" style={{ color: 'white' }}>
             <Building2 className="w-6 h-6" />
             <span className="font-heading font-semibold text-lg tracking-tight">Propostas</span>
+            <span className="text-[10px] bg-white/20 px-1 rounded ml-1 text-white/50">v1.0.1</span>
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => setIsExportDialogOpen(true)} style={{ backgroundColor: 'rgb(8, 21, 52)', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 flex-1 sm:flex-none">
