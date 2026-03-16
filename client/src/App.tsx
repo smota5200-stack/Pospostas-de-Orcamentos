@@ -13,7 +13,6 @@ import Meetings from "@/pages/Meetings";
 import MarketingPage from "@/pages/Marketing";
 import Notes from "@/pages/Notes";
 import Texts from "@/pages/Texts";
-import DeployTest from "@/pages/DeployTest";
 import AppLayout from "@/components/AppLayout";
 
 function Router() {
@@ -30,7 +29,6 @@ function Router() {
         <Route path="/textos" component={Texts} />
         <Route path="/orcamento/novo" component={QuoteGenerator} />
         <Route path="/orcamento/:id" component={QuoteGenerator} />
-        <Route path="/deploy-test" component={DeployTest} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
