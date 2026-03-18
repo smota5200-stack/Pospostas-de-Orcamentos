@@ -8,6 +8,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_SUPABASE_URL
-        sync: false
+        value: https://wvncdusvpfbdsnclynxl.supabase.co
       - key: VITE_SUPABASE_ANON_KEY
-        sync: false
+        value: sb_publishable_z4Lj8R0e1VGKav0XdvfN2w_ZQmBFsF7
