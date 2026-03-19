@@ -18,12 +18,21 @@ RENDER_SERVICE_ID="$2"
 echo "🚀 Iniciando deploy no Render..."
 echo "Serviço: $RENDER_SERVICE_ID"
 
-# Fazer deploy via API
-response=$(curl -s -X POST \
-  -H "Authorization: Bearer $RENDER_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"clearCache":false,"group":"main"}' \
-  "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys")
+# Fazer deploy via API (API key) ou hook de deploy (chave rnd_*)
+if [[ "$RENDER_API_KEY" == rnd_* ]]; then
+  echo "Usando deploy hook (deploy key)"
+  response=$(curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"clearCache":false,"group":"main"}' \
+    "https://api.render.com/integrations/deploy/$RENDER_SERVICE_ID?key=$RENDER_API_KEY")
+else
+  echo "Usando API key"
+  response=$(curl -s -X POST \
+    -H "Authorization: Bearer $RENDER_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"clearCache":false,"group":"main"}' \
+    "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys")
+fi
 
 echo "Resposta do Render:"
 echo "$response"
