@@ -21,10 +21,11 @@ echo "Serviço: $RENDER_SERVICE_ID"
 # Fazer deploy via API (API key) ou hook de deploy (chave rnd_*)
 if [[ "$RENDER_API_KEY" == rnd_* ]]; then
   echo "Usando deploy hook (deploy key)"
+  # Render deploy hook URL
   response=$(curl -s -X POST \
     -H "Content-Type: application/json" \
     -d '{"clearCache":false,"group":"main"}' \
-    "https://api.render.com/integrations/deploy/$RENDER_SERVICE_ID?key=$RENDER_API_KEY")
+    "https://api.render.com/deploy/$RENDER_SERVICE_ID?key=$RENDER_API_KEY")
 else
   echo "Usando API key"
   response=$(curl -s -X POST \
