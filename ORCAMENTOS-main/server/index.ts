@@ -6,6 +6,14 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
+// Ensure runtime errors are logged for hosted environments (Render, Vercel).
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -59,7 +67,7 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+async function setupServer() {
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
@@ -85,18 +93,23 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "3000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
-})();
+  // In non-serverless environments, listen on the configured port.
+  // In serverless environments (e.g. Vercel) we do not call listen.
+  if (!process.env.VERCEL) {
+    const port = parseInt(process.env.PORT || "3000", 10);
+    httpServer.listen(
+      {
+        port,
+        host: "0.0.0.0",
+      },
+      () => {
+        log(`serving on port ${port}`);
+      },
+    );
+  }
+}
+
+// Initialize when imported so Vercel can use the exported app.
+void setupServer();
+
+export default app;
